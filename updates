@@ -1,0 +1,132 @@
+#!/bin/bash
+
+# This script will run a series of commands to update the Linux Ubuntu OS.
+
+# This script was created by Jeff Bremer for use on the SSH commandline.
+# Donations are welcome at Bitcoin address:  1H7vpy8AJFCxADEgx3UKivSf8vFZc6e12W
+# http://www.jbx.nl/
+
+# Copy this script to:  cp -p <sourcefolder>/updates /usr/bin
+
+# parameter-options: direct
+
+###############################################################################
+# DO NOT EDIT THE SCRIPT BELOW UNLESS YOU REALLY KNOW WHAT YOU ARE DOING !!!
+###############################################################################
+
+updatesversion="updates v3.0 (6-3-2018)"
+
+logfile=/var/log/updates.txt
+
+nocolor='\033[0m'
+red='\033[1;31m'
+yellow='\033[1;33m'
+green='\033[1;32m'
+blue='\033[1;34m'
+bright='\033[1m'
+
+if [ "$1" == "direct" ] ; then direct=yes ; fi
+
+function starline {
+echo -e "${bright}*****************************************************************${nocolor}"
+}
+
+read_char() {						# 1 keyboard-click opvragen
+  stty -icanon -echo
+  eval "$1=\$(dd bs=1 count=1 2>/dev/null)"
+  stty icanon echo
+}
+
+function writelog {
+echo "$(date +%Y-%m-%d) $(date +%H:%M:%S) $logstring" >> $logfile
+}
+
+echo "$updatesversion"
+
+# Script must be run as root
+if [[ $EUID -ne 0 ]] ; then
+   echo "This script must be run as root" 
+   echo "Use the following command:  sudo su -"
+   exit 1
+fi
+
+logstring="*****************************************************************" && writelog
+
+# Check update-notifier
+if [ -d /var/lib/update-notifier ] ; then
+	updatenotifier=$(/usr/lib/update-notifier/apt-check --human-readable)
+	echo "$updatenotifier" >> $logfile
+	echo "$updatenotifier"
+fi
+starline
+
+# apt update
+echo -e "${yellow}apt update${nocolor}"
+apt -y update
+starline
+
+# apt list
+echo -e "${yellow}apt list --upgradable${nocolor}"
+apt list --upgradable
+echo "$(apt list --upgradable)" >> $logfile
+echo "Ignore warning^"
+starline
+
+if ! [ "$direct" == "yes" ] ; then
+	read -p "Press [Enter] key to install updates"
+	starline
+fi
+
+logstring="Updates started" && writelog
+
+# apt update / dist-upgrade
+echo -e "${yellow}apt upgrade${nocolor}"
+kept_back_packages=$(apt-get upgrade -s | sed -n '/back:/,/upgraded./p' | sed '1d;$d')
+if [ "$kept_back_packages" == "" ] ; then
+	apt -y upgrade
+else
+	echo -e "${red}The following packages will be held back:${nocolor}"
+	echo "$kept_back_packages"
+	echo -e "Press ${bright}D${nocolor} to run ${bright}apt dist-upgrade${nocolor} or any other key to continue updates"
+	
+	if [ "$direct" == "yes" ] ; then
+		char=d
+	else
+		read_char char
+	fi
+		
+	case $char in
+		d)
+			starline
+			logstring="Distribution update started" && writelog
+			echo -e "${yellow}apt-get dist-upgrade${nocolor}"
+			DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade ;;
+			# apt -y dist-upgrade ;;
+		*)
+			starline
+			echo -e "${yellow}apt upgrade${nocolor}"
+			DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade ;;
+			# apt -y upgrade ;;
+	esac
+fi
+starline
+
+logstring="Updates Finished" && writelog
+
+# apt autoremove
+echo -e "${yellow}apt autoremove${nocolor}"
+apt -y autoremove
+starline
+
+# apt autoclean
+echo -e "${yellow}apt autoclean${nocolor}"
+apt autoclean
+starline
+
+logstring="Autoremove & Autoclean Finished" && writelog
+
+# Check reboot needed
+if [ -f /var/run/reboot-required ] ; then
+	logstring="Reboot required" && writelog
+	echo -e "${red}Reboot required${nocolor}"
+fi
