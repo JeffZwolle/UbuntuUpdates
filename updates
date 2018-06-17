@@ -14,7 +14,7 @@
 # DO NOT EDIT THE SCRIPT BELOW UNLESS YOU REALLY KNOW WHAT YOU ARE DOING !!!
 ###############################################################################
 
-updatesversion="updates v3.0 (6-3-2018)"
+updatesversion="updates v3.0.1 (16-6-2018)"
 
 logfile=/var/log/updates.txt
 
