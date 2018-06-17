@@ -79,7 +79,7 @@ fi
 
 logstring="Updates started" && writelog
 
-# apt update / dist-upgrade
+# apt upgrade / dist-upgrade
 echo -e "${yellow}apt upgrade${nocolor}"
 kept_back_packages=$(apt-get upgrade -s | sed -n '/back:/,/upgraded./p' | sed '1d;$d')
 if [ "$kept_back_packages" == "" ] ; then
