@@ -1,31 +1,39 @@
 #!/bin/bash
 
-# This script will run a series of commands to update the Linux Ubuntu OS.
+scriptversion="updates v4.2 (1-5-2026)"
+
+# This script will run a series of commands to update the Linux Ubuntu or Debian OS.
 
 # This script was created by Jeff Bremer for use on the SSH commandline.
 # Donations are welcome at Bitcoin address:  1H7vpy8AJFCxADEgx3UKivSf8vFZc6e12W
-# http://www.jbx.nl/
+# https://www.jbx.nl/
 
-# Copy this script to:  cp -p <sourcefolder>/updates /usr/bin
-
-# parameter-options: direct
+# Copy this script to system:  cp -p <sourcefolder>/updates /usr/bin/
 
 ###############################################################################
 # DO NOT EDIT THE SCRIPT BELOW UNLESS YOU REALLY KNOW WHAT YOU ARE DOING !!!
 ###############################################################################
 
-updatesversion="updates v3.0.1 (16-6-2018)"
+# Logfile
+logfile=/var/log/updates.log
 
-logfile=/var/log/updates.txt
+# Zabbix
+ZabbixKeyUpdate=updates.sh
+
+###############################################################################
+
+if [[ "$@" == *"force"* ]] ; then Force=yes ; fi
+if [[ "$@" == *"direct"* ]] ; then Direct=yes ; fi
+if [[ "$@" == *"reboot"* ]] ; then Reboot=yes ; fi
 
 nocolor='\033[0m'
 red='\033[1;31m'
 yellow='\033[1;33m'
 green='\033[1;32m'
 blue='\033[1;34m'
+purple='\033[1;35m'
+white='\033[1;37m'
 bright='\033[1m'
-
-if [ "$1" == "direct" ] ; then direct=yes ; fi
 
 function starline {
 echo -e "${bright}*****************************************************************${nocolor}"
@@ -41,24 +49,79 @@ function writelog {
 echo "$(date +%Y-%m-%d) $(date +%H:%M:%S) $logstring" >> $logfile
 }
 
-echo "$updatesversion"
+echo -e "${bright}$scriptversion${nocolor}"
 
 # Script must be run as root
 if [[ $EUID -ne 0 ]] ; then
-   echo "This script must be run as root" 
-   echo "Use the following command:  sudo su -"
-   exit 1
+	echo "This script must be run as root"
+	echo "Use the following command:  sudo su -"
+	exit 1
+fi
+
+# Script must be running in screen
+if ! [[ "$Force" == "yes" ]] ; then
+	if [ "$(echo $STY)" = "" ] ; then
+		echo -e "${red}This script must be running in Screen${nocolor}"
+		echo "Use the following command: screen"
+		echo "or use this parameter to disregard: force"
+		exit 1
+	fi
 fi
 
 logstring="*****************************************************************" && writelog
 
+ZabbixConfig=/etc/zabbix/zabbix_agentd.conf
+if [ -f $ZabbixConfig ] ; then
+	echo -e "${yellow}Zabbix Agent Config found${nocolor}"
+
+	# Get values from Zabbix Config
+	ZabbixServer=$(cat $ZabbixConfig | grep '^Server=' | sed s/\^Server\=//g )
+	echo "ZabbixServer = $ZabbixServer"
+	ZabbixHostName=$(cat $ZabbixConfig | grep '^Hostname=' | sed s/\^Hostname\=//g )
+	echo "ZabbixHostName = $ZabbixHostName"
+
+	# Check if Zabbix-sender is installed
+	if ! [ -f /usr/bin/zabbix_sender ] ; then
+		echo -e "${red}Zabbix-sender not found${nocolor}"
+		echo "Install using: apt install zabbix-sender"
+	else
+		Zabbix=yes
+	fi
+fi
+function ZabbixSend {
+ZabbixValue=$@
+if ! [[ "$Zabbix" == "yes" ]] ; then return ; fi
+echo -e "${yellow}Notifying Zabbix: $ZabbixValue${nocolor}"
+
+IFS=',' read -ra IPaddresses <<< "$ZabbixServer"
+for IP in "${IPaddresses[@]}" ; do
+	# check if nc is available
+	if [ -f /usr/bin/nc ] ; then
+		# check if zabbix server is available, this could diminish waiting time
+		if nc -z -w 1 $IP 10051 >/dev/null 2>&1 ; then
+			# send to zabbix
+			/usr/bin/zabbix_sender -z $IP -s $ZabbixHostName -k "$ZabbixKeyUpdate" -o "$ZabbixValue"
+		else
+			echo "$IP unavailable"
+		fi
+	else
+		# send to zabbix
+		/usr/bin/zabbix_sender -z $IP -s $ZabbixHostName -k "$ZabbixKeyUpdate" -o "$ZabbixValue"
+	fi
+done
+starline
+}
+
+starline
+
 # Check update-notifier
 if [ -d /var/lib/update-notifier ] ; then
+	echo -e "${yellow}Check update-notifier${nocolor}"
 	updatenotifier=$(/usr/lib/update-notifier/apt-check --human-readable)
 	echo "$updatenotifier" >> $logfile
 	echo "$updatenotifier"
+	starline
 fi
-starline
 
 # apt update
 echo -e "${yellow}apt update${nocolor}"
@@ -72,12 +135,14 @@ echo "$(apt list --upgradable)" >> $logfile
 echo "Ignore warning^"
 starline
 
-if ! [ "$direct" == "yes" ] ; then
+if ! [ "$Direct" == "yes" ] ; then
 	read -p "Press [Enter] key to install updates"
 	starline
 fi
 
 logstring="Updates started" && writelog
+
+ZabbixSend start
 
 # apt upgrade / dist-upgrade
 echo -e "${yellow}apt upgrade${nocolor}"
@@ -89,7 +154,7 @@ else
 	echo "$kept_back_packages"
 	echo -e "Press ${bright}D${nocolor} to run ${bright}apt dist-upgrade${nocolor} or any other key to continue updates"
 	
-	if [ "$direct" == "yes" ] ; then
+	if [ "$Direct" == "yes" ] ; then
 		char=d
 	else
 		read_char char
@@ -125,8 +190,17 @@ starline
 
 logstring="Autoremove & Autoclean Finished" && writelog
 
+ZabbixSend finished
+
 # Check reboot needed
 if [ -f /var/run/reboot-required ] ; then
 	logstring="Reboot required" && writelog
 	echo -e "${red}Reboot required${nocolor}"
+fi
+
+if [ "$Reboot" == "yes" ] ; then
+	echo -e "${yellow}reboot${nocolor}"
+	logstring="Reboot initiated" && writelog
+	sync
+	reboot
 fi
