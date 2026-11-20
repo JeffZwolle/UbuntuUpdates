@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>6.0</version>
+    <date>2023-02-02T10:40:19Z</date>
+    <groups>
+        <group>
+            <uuid>148cda72321449c09f874270ebb09416</uuid>
+            <name>Linux servers misc</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <uuid>a4c0b2a9f46d4f94b76c0a1100ef5645</uuid>
+            <template>Linux Updates</template>
+            <name>Linux Updates</name>
+            <groups>
+                <group>
+                    <name>Linux servers misc</name>
+                </group>
+            </groups>
+            <items>
+                <item>
+                    <uuid>9d837b7a1f6d4ec29036002f92187efc</uuid>
+                    <name>Updates.sh</name>
+                    <type>TRAP</type>
+                    <key>updates.sh</key>
+                    <delay>0</delay>
+                    <history>365d</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <triggers>
+                        <trigger>
+                            <uuid>513e3bbf710346a397957f46f44ac7bc</uuid>
+                            <expression>last(/Linux Updates/updates.sh)=&quot;finished&quot; and last(/Linux Updates/updates.sh)&lt;15m</expression>
+                            <name>Linux UpdateScript Finished (&lt;15m)</name>
+                            <priority>INFO</priority>
+                        </trigger>
+                        <trigger>
+                            <uuid>333b6adadd864773844e0c7cf25b5eaf</uuid>
+                            <expression>last(/Linux Updates/updates.sh)=&quot;start&quot;</expression>
+                            <recovery_mode>RECOVERY_EXPRESSION</recovery_mode>
+                            <recovery_expression>last(/Linux Updates/updates.sh)&lt;&gt;&quot;start&quot;</recovery_expression>
+                            <name>Linux UpdateScript Running</name>
+                            <priority>INFO</priority>
+                            <manual_close>YES</manual_close>
+                        </trigger>
+                    </triggers>
+                </item>
+            </items>
+        </template>
+    </templates>
+</zabbix_export>
