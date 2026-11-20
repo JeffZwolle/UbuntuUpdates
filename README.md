@@ -11,10 +11,18 @@ apt autoremove
 apt autoclean
 ```
 
-Copy this script to the primary directory of executable commands on the system, and make it executable:
+Download the script "updates".\
+Copy it from your home folder to the primary directory of executable commands on the system, and make it executable:
 
 ```bash
 sudo cp -p ~/updates /usr/bin/
+sudo chmod +x /usr/bin/updates
+````
+
+Or, copy it directly from github, and make it executable:
+
+```bash
+sudo wget -O /usr/bin/updates https://raw.githubusercontent.com/JeffZwolle/UbuntuUpdates/dfc7e634fc39ca92897f112d7a832c7a1cdbeed0/updates
 sudo chmod +x /usr/bin/updates
 ````
 
