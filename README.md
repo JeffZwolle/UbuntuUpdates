@@ -22,7 +22,7 @@ sudo chmod +x /usr/bin/updates
 Or, copy it directly from github, and make it executable:
 
 ```bash
-sudo wget -O /usr/bin/updates https://raw.githubusercontent.com/JeffZwolle/UbuntuUpdates/dfc7e634fc39ca92897f112d7a832c7a1cdbeed0/updates
+sudo wget -O /usr/bin/updates https://raw.githubusercontent.com/JeffZwolle/UbuntuUpdates/master/updates
 sudo chmod +x /usr/bin/updates
 ````
 
