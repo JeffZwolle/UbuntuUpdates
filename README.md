@@ -37,4 +37,6 @@ Script logs are saved to: /var/log/updates.log
 ## Zabbix Template
 
 There is a Zabbix template available which is optional.\
-It will show in Zabbix that the updates script is running, which can be handy to understand certain alerts.
+It will show in Zabbix that the updates script is running, which can be handy to understand certain alerts.\
+The script will extract the settings from the Zabbix Agent config file.\
+Zabbix is optional. If Zabbix Agent is not installed, then the script will just ignore that part of the script.
