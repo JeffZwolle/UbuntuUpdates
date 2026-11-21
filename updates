@@ -4,7 +4,7 @@ scriptversion="updates v4.2.3 (20-11-2026)"
 
 # This script will run a series of commands to update the Linux Ubuntu or Debian OS.
 
-# This script was created by Jeff Bremer for use on the SSH commandline.
+# This script was created by JeffZwolle for use on the SSH commandline.
 # Donations are welcome at Bitcoin address:  1H7vpy8AJFCxADEgx3UKivSf8vFZc6e12W
 # https://www.jbx.nl/
 
