@@ -1,5 +1,4 @@
 # UbuntuUpdates
-
 ## Issue update commands with a single command
 
 This script is useful if you are tired of typing:
