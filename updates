@@ -1,6 +1,6 @@
 #!/bin/bash
 
-scriptversion="updates v4.2.2 (20-11-2026)"
+scriptversion="updates v4.2.3 (20-11-2026)"
 
 # This script will run a series of commands to update the Linux Ubuntu or Debian OS.
 
@@ -8,7 +8,8 @@ scriptversion="updates v4.2.2 (20-11-2026)"
 # Donations are welcome at Bitcoin address:  1H7vpy8AJFCxADEgx3UKivSf8vFZc6e12W
 # https://www.jbx.nl/
 
-# Copy this script to system:  cp -p <sourcefolder>/updates /usr/bin/
+# Copy this script to system:  sudo cp -p ~/updates /usr/bin/
+# And make it executable:  sudo chmod +x /usr/bin/updates
 
 ###############################################################################
 # DO NOT EDIT THE SCRIPT BELOW UNLESS YOU REALLY KNOW WHAT YOU ARE DOING !!!
@@ -60,7 +61,7 @@ fi
 
 # Script must be running in screen
 if ! [[ "$Force" == "yes" ]] ; then
-	if [ "$(echo $STY)" = "" ] ; then
+	if [ "$STY" = "" ] ; then
 		echo -e "${red}This script must be running in Screen${nocolor}"
 		echo "Use the following command: screen"
 		echo "or use this parameter to ignore: force"
@@ -75,9 +76,11 @@ if [ -f $ZabbixConfig ] ; then
 	echo -e "${yellow}Zabbix Agent Config found${nocolor}"
 
 	# Get values from Zabbix Config
-	ZabbixServer=$(cat $ZabbixConfig | grep '^Server=' | sed s/\^Server\=//g )
+	# shellcheck disable=SC1001
+	ZabbixServer=$(cat $ZabbixConfig | grep '^Server=' | sed s/^Server\=//g )
 	echo "ZabbixServer = $ZabbixServer"
-	ZabbixHostName=$(cat $ZabbixConfig | grep '^Hostname=' | sed s/\^Hostname\=//g )
+	# shellcheck disable=SC1001
+	ZabbixHostName=$(cat $ZabbixConfig | grep '^Hostname=' | sed s/^Hostname\=//g )
 	echo "ZabbixHostName = $ZabbixHostName"
 
 	# Check if Zabbix-sender is installed
@@ -131,7 +134,7 @@ starline
 # apt list
 echo -e "${yellow}apt list --upgradable${nocolor}"
 apt list --upgradable
-echo "$(apt list --upgradable)" >> $logfile
+apt list --upgradable >> $logfile
 echo "Ignore warning^"
 starline
 
